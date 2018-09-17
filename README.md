@@ -1,1 +1,0 @@
-# accelQ-Connect-TeamCity
