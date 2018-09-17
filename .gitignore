@@ -1,0 +1,7 @@
+/.idea
+/target
+/build
+/aqconnect-agent/target
+/aqconnect-server/target
+/aqconnect-common/target
+readme.txt
