@@ -1,5 +1,6 @@
 package com.aq.aqconnect;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -210,7 +211,7 @@ public class AQPluginRESTClient {
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
         urlParameters.add(new BasicNameValuePair("username", userName));
-        urlParameters.add(new BasicNameValuePair("password", secretKey));//new String(Base64.encodeBase64String(secretKey.getBytes()))));
+        urlParameters.add(new BasicNameValuePair("password", new String(Base64.encodeBase64String(secretKey.getBytes()))));
 
         try {
             HttpEntity postParams = new UrlEncodedFormEntity(urlParameters);
