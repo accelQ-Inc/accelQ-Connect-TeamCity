@@ -63,10 +63,6 @@ public class AQPluginRESTClient {
         return BASE_URL;
     }
 
-    public String getLoginURL() {
-        return LOGIN_URL;
-    }
-
     public String getResultExternalAccessURL(String jobPid) {
         return String.format(getBaseURL() + AQPluginConstants.EXT_JOB_WEB_LINK, TENANT_CODE, PROJECT_NAME, jobPid);
     }
