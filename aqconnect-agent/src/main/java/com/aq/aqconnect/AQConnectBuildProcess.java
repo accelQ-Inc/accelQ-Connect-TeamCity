@@ -2,6 +2,7 @@ package com.aq.aqconnect;
 
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.*;
+import jetbrains.buildServer.messages.DefaultMessagesInfo;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
 
@@ -20,6 +21,8 @@ public class AQConnectBuildProcess implements BuildProcess{
     public static final String PROJECT_NAME = "projectName";
     public static final String JOB_PID = "jobPid";
     public static final String RUN_PARAM_STR = "runParamStr";
+    public long passCount = 0, failCount = 0, runningCount = 0, totalCount = 0, notRunCount = 0;
+    public String resultAccessURL = null;
     BuildFinishedStatus buildStatus = BuildFinishedStatus.FINISHED_SUCCESS;
 
     public AQConnectBuildProcess(@NotNull AgentRunningBuild build, @NotNull BuildRunnerContext context){
@@ -32,7 +35,7 @@ public class AQConnectBuildProcess implements BuildProcess{
         buildLogger = myBuild.getBuildLogger();
         final AQPluginLogger logger = new AQPluginLogger(buildLogger);
         Map<String, String> conf = new HashMap<String, String>(myContext.getRunnerParameters());
-        boolean isJobFailed = false;
+        boolean isJobFailed = false, isConnectionFailed = false, isAgentNotAvailable = false;
         //plugin main logic starts here
         try {
             logger.println("**************************************");
@@ -53,10 +56,9 @@ public class AQConnectBuildProcess implements BuildProcess{
                     buildStatus = BuildFinishedStatus.FINISHED_FAILED;
                 }
                 long realJobPid = (Long) realJobObj.get("pid");
-                long passCount = 0, failCount = 0, runningCount = 0, totalCount = 0, notRunCount = 0;
                 String jobPurpose = (String) realJobObj.get("purpose");
                 String jobStatus = "";
-                String resultAccessURL = aqPluginRESTClient.getResultExternalAccessURL(Long.toString(realJobPid));
+                resultAccessURL = aqPluginRESTClient.getResultExternalAccessURL(Long.toString(realJobPid));
                 JSONObject summaryObj;
                 int attempt = 0;
                 logger.println("Purpose: " + jobPurpose);
@@ -87,6 +89,9 @@ public class AQConnectBuildProcess implements BuildProcess{
                         //throw new AQPluginException("No agent available to pickup the job");
                         buildStatus = BuildFinishedStatus.FINISHED_FAILED;
                         buildLogger.error(AQPluginConstants.LOG_DELIMITER + "No agent available to pickup the job");
+                        buildLogger.logMessage(DefaultMessagesInfo.createTextMessage(String.format("##teamcity[buildStatus status='%s' text='%s']", "FAILURE", "No agent available to pickup the job")));
+                        isAgentNotAvailable = true;
+                        break;
                     }
                     Thread.sleep(AQPluginConstants.JOB_STATUS_POLL_TIME);
                 } while(!jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.COMPLETED.getStatus().toUpperCase())
@@ -94,8 +99,10 @@ public class AQConnectBuildProcess implements BuildProcess{
                         && !jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.FAILED.getStatus().toUpperCase()));
 
                 isJobFailed = (failCount > 0) || jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.ABORTED.getStatus().toUpperCase()) || jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.FAILED.getStatus().toUpperCase());
-                logger.println("Go to " + resultAccessURL + " for a detailed report");
-                logger.println();
+                if(!isJobFailed) {
+                    logger.println("Go to " + resultAccessURL + " for a detailed report");
+                    logger.println();
+                }
 
                 logger.println("**************************************");
                 logger.println("**** ACCELQ PLUGIN PROCESSING END ****");
@@ -105,19 +112,27 @@ public class AQConnectBuildProcess implements BuildProcess{
                 //generate final report with app test result report redirection url
                 //new AQPluginTestResultReportGenerator().generateReport(taskContext.getRootDirectory().getAbsolutePath(), resultAccessURL);
             } else {
+                isConnectionFailed = true;
                 buildStatus = BuildFinishedStatus.FINISHED_FAILED;
                 buildLogger.error(AQPluginConstants.LOG_DELIMITER + "Connection Failed");
+                buildLogger.logMessage(DefaultMessagesInfo.createTextMessage(String.format("##teamcity[buildStatus status='%s' text='%s']", "FAILURE", "Connection Failed")));
             }
 
-            if(isJobFailed) {
-                buildStatus = BuildFinishedStatus.FINISHED_FAILED;
-                buildLogger.error(AQPluginConstants.LOG_DELIMITER + "Job Failed");
+            if(!isConnectionFailed && !isAgentNotAvailable) {
+                if (isJobFailed) {
+                    buildStatus = BuildFinishedStatus.FINISHED_FAILED;
+                    buildLogger.error(AQPluginConstants.LOG_DELIMITER + "Job Failed");
+                    buildLogger.logMessage(DefaultMessagesInfo.createTextMessage(String.format("##teamcity[buildStatus status='%s' text='%s']", "FAILURE", String.format("Tests Passed: %d, Failure: %d, Not Run: %d\nResult Access Link: %s\n\n", passCount, failCount, notRunCount, resultAccessURL))));
+                } else {
+                    buildLogger.logMessage(DefaultMessagesInfo.createTextMessage(String.format("##teamcity[buildStatus status='%s' text='%s']", "SUCCESS", String.format("Tests Passed: %d, Failure: %d, Not Run: %d\nResult Access Link: %s\n\n", passCount, failCount, notRunCount, resultAccessURL))));
+                }
             }
 
         }
         catch (Exception exception){
             buildStatus = BuildFinishedStatus.FINISHED_FAILED;
             buildLogger.error(AQPluginConstants.LOG_DELIMITER + "Internal Error");
+            buildLogger.logMessage(DefaultMessagesInfo.createTextMessage(String.format("##teamcity[buildStatus status='%s' text='%s']", "FAILURE", "Internal Error")));
         }
     }
 
