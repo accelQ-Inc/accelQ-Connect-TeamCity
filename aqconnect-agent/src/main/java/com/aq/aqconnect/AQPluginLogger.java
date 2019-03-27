@@ -24,5 +24,9 @@ public class AQPluginLogger {
     public void println(String msg) {
         print(msg + "\n");
     }
+    
+    public void logStatus(String status, String msg) {
+        this.logger.logMessage(DefaultMessagesInfo.createTextMessage(String.format("##teamcity[buildStatus status='%s' text='%s']", status, msg)));
+    }
 }
 
