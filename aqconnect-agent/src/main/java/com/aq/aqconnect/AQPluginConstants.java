@@ -44,6 +44,7 @@ public class AQPluginConstants {
         COMPLETED("Completed"),
         ABORTED("Aborted"),
         FAILED("Failed to start"),
+        ERROR("Error"),
         RECURRING("Recurring"),
         CONTINUOUS_INTEGRATION("Continuous Integration");
 
