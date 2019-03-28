@@ -252,7 +252,7 @@ public class AQPluginRESTClient {
 
         JSONArray userProjectList = (JSONArray) loginResponse.get("userProjects");
         for(Object userProject: userProjectList) {
-            String projectName_ = (String)((JSONObject)userProject).get("projectDisplayName");
+            String projectName_ = (String)((JSONObject)userProject).get("projectName");
             if(projectName_.toLowerCase().trim().equals(projectName.toLowerCase().trim())) {
                 PROJECT_NAME = (String)((JSONObject)userProject).get("projectName");
                 break;
