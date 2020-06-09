@@ -73,8 +73,8 @@ public class AQPluginRESTClient {
 
         LOGIN_URL = BASE_URL + "awb/api/aq_global/security/login";
         USERS_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/conf/users";
-        JOB_TRIGGER_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/test-exec/jobs/%s/trigger-ci";
-        JOB_SUMMARY_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/test-exec/runs/%s?onlySummary=true";
+        JOB_TRIGGER_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/test-exec/jobs/auto/%s/trigger-ci";
+        JOB_SUMMARY_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/test-exec/runs/auto/%s?onlySummary=true";
     }
 
     private CloseableHttpClient getHttpsClient() {
